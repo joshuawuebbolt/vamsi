@@ -12,10 +12,16 @@
   "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
-    "commands": [{
-      "command": "vamsi.helloWorld",
-      "title": "Hello World"
-    }]
+    "commands": [
+      {
+        "command": "vamsi.helloWorld",
+        "title": "Hello World"
+      },
+      {
+        "command": "vamsi.daysSince",
+        "title": "Days Since"
+      }
+    ]
   },
   "scripts": {
     "lint": "eslint .",
