@@ -29,7 +29,15 @@ function activate(context) {
 		}
 	});
 
-	context.subscriptions.push(disposable, disposableDays);
+	let interval;
+	const disposableTalkingLoop = vscode.commands.registerCommand('vamsi.talkingLoop', function () {
+		if (interval) return; // already running
+		interval = setInterval(() => {
+			vscode.window.showInformationMessage('WORK HARDER');
+		}, 60000);
+	});
+
+	context.subscriptions.push(disposable, disposableDays, disposableTalkingLoop);
 }
 
 // This method is called when your extension is deactivated

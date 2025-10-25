@@ -20,6 +20,10 @@
       {
         "command": "vamsi.daysSince",
         "title": "Days Since"
+      },
+      {
+        "command": "vamsi.talkingLoop",
+        "title": "Talking Loop"
       }
     ]
   },
