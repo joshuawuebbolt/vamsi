@@ -3,6 +3,7 @@
   "displayName": "Vamsi",
   "description": "An AI coding coach    to help users  learn to code.",
   "version": "0.0.1",
+  "type": "module",
   "engines": {
     "vscode": "^1.105.0"
   },
@@ -32,6 +33,10 @@
       {
         "command": "vamsi.synthesizeElevenLabs",
         "title": "Text to Speech"
+      },
+      {
+        "command": "vamsi.hintLoop",
+        "title": "Hint Loop"
       }
     ]
   },
@@ -50,6 +55,8 @@
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.20.1",
-    "sound-play": "^1.1.0"
+    "sound-play": "^1.1.0",
+    "@google/genai": "^1.27.0",
+    "dotenv": "^17.2.3"
   }
 }
