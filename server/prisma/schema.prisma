@@ -13,6 +13,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model GlobalState {
+  key   String  @id
+  value Int
+}
+
 model Student {
   studentID                Int                      @id @default(autoincrement())
 
@@ -20,8 +25,7 @@ model Student {
 }
 
 model Problem {
-  problemID                Int                      @id @default(autoincrement())
-  instructions             String
+  problemID                Int                      @id
   createTime               DateTime                 @default(now())
   summary                  String                   @default("")
 
@@ -37,4 +41,6 @@ model ProblemRecord {
 
   student                  Student                  @relation(fields: [studentID], references: [studentID])
   problem                  Problem                  @relation(fields: [problemID], references: [problemID])
+
+  @@unique([studentID, problemID]) 
 }

@@ -15,8 +15,8 @@ export async function POST(request) {
 // update student status (whether they have completed the problem)
 export async function PUT(request) {
   try {
-    const { id, completed } = await request.json();
-    const student = await prismaService.updateStudentStatus(id, completed);
+    const { studentID, completed } = await request.json();
+    const student = await prismaService.updateStudentStatus(studentID, completed);
     return NextResponse.json({ student }, { status: 200 });
   } catch (error) {
     console.error('PUT /students error:', error);
