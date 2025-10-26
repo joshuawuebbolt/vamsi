@@ -1,0 +1,40 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  studentID                Int                      @id @default(autoincrement())
+
+  ProblemRecords           ProblemRecord[]
+}
+
+model Problem {
+  problemID                Int                      @id @default(autoincrement())
+  instructions             String
+  createTime               DateTime                 @default(now())
+  summary                  String                   @default("")
+
+  ProblemRecords           ProblemRecord[]
+}
+
+model ProblemRecord {
+  problemRecordID          Int                      @id @default(autoincrement())
+  studentID                Int
+  problemID                Int
+  finished                 Boolean                  @default(false)
+  issues                   Json                     @default("[]")
+
+  student                  Student                  @relation(fields: [studentID], references: [studentID])
+  problem                  Problem                  @relation(fields: [problemID], references: [problemID])
+}

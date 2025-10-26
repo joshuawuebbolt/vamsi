@@ -155,33 +155,11 @@ export async function activate(context) {
 			const savedPath = await synthesizeTextToMp3(text);
 			let sound = savedPath.split('\\').pop();
 			await playSound(context, sound);
-			vscode.window.showInformationMessage(`Audio file ${sound} synthesized speech saved to ${savedPath}`);
 		} catch (err) {
 			vscode.window.showErrorMessage(`Eleven Labs synthesis failed: ${err.message}`);
 		}
 	});
-	context.subscriptions.push(disposableEleven);
 
-	const disposablePlay = vscode.commands.registerCommand('vamsi.playMp3', function () {
-		playSound(context, 'StockCharity.mp3');
-	});
-
-	context.subscriptions.push(disposablePlay);
-
-    // Days since last saw Vamsi 
-    const disposableDays = vscode.commands.registerCommand('vamsi.daysSince', function () {
-        const lastSeen = new Date(2025, 4, 10);
-        const now = new Date();
-        const diffMs = now.getTime() - lastSeen.getTime();
-        const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        if (isNaN(days)) {
-            vscode.window.showInformationMessage('Could not compute days since May 10, 2025.');
-        } else if (days >= 0) {
-            vscode.window.showInformationMessage(`It's been ${days} day(s) since you saw Vamsi (${lastSeen.toDateString()}).`);
-        } else {
-            vscode.window.showInformationMessage(`May 10, 2025 is ${Math.abs(days)} day(s) from now.`);
-        }
-    });
 
     const disposableHintLoop = vscode.commands.registerCommand('vamsi.hintLoop', function () {
         if (hintInterval) {
@@ -281,10 +259,10 @@ export async function activate(context) {
     });
 
     context.subscriptions.push(
-        disposable, 
-        disposableDays, 
-        disposableTalkingLoop, 
-        disposableStopLoop 
+        disposable,
+        disposableHintLoop, 
+        disposableStopLoop,
+        disposableEleven
     );
 }
 

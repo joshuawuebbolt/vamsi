@@ -15,20 +15,12 @@
   "contributes": {
     "commands": [
       {
-        "command": "vamsi.helloWorld",
-        "title": "Hello World"
-      },
-      {
         "command": "vamsi.daysSince",
         "title": "Days Since"
       },
       {
-        "command": "vamsi.talkingLoop",
-        "title": "Talking Loop"
-      },
-      {
-        "command": "vamsi.playMp3",
-        "title": "Play MP3"
+        "command": "vamsi.stopLoop",
+        "title": "Stop Loop"
       },
       {
         "command": "vamsi.synthesizeElevenLabs",
@@ -36,7 +28,7 @@
       },
       {
         "command": "vamsi.hintLoop",
-        "title": "Hint Loop"
+        "title": "Gives Hints"
       }
     ]
   },
