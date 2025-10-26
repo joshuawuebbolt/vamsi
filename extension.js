@@ -67,7 +67,7 @@ export async function activate(context) {
             
             const fileContent = editor.document.getText();
 
-            // --- Construct the Prompt ---
+            // Construct the Prompt
             const prompt = `
             You are a patient and helpful coding assistant.
             The user is trying to solve the problem specified on the top of the file.
@@ -82,6 +82,14 @@ export async function activate(context) {
 
             Please provide a new, subtle, one-sentence hint to guide them.
             Do not give the solution. Focus on the next logical step.
+			If the code is the solution, set "hint" to "FINISHED".
+			Record each concept the user has issues on, leave empty if none.
+			Respond with the following format with no codeblocks:
+			{
+				"hint": <one-sentence-hint>,
+				"issues": [<one-sentence-summary-of-issue1>,
+				<one-sentence-summary-of-issue2>, etc.]
+			}
             `;
 
             try {
@@ -92,16 +100,19 @@ export async function activate(context) {
                 });
 
                 if (response.text) {
-                    const hintText = response.text.trim();
+					console.log(response.text);
+					const responseJSON = JSON.parse(response.text);
+                    const hintText = responseJSON.hint;
                     vscode.window.showInformationMessage(`Vamsi Hint: ${hintText}`);
-                    hintHistory.push(hintText); // Add to history to avoid repeats
+                    hintHistory.push(hintText); // Add to history to avoid repeated hints
+					console.log(responseJSON.issues);
                 }
             } catch (err) {
                 const message = err instanceof Error ? err.message : String(err);
                 console.error(`Vamsi Hint Loop Error: ${message}`);
             }
 
-        }, 60000); // 60,000 milliseconds = 1 minute
+        }, 10000); // 60,000 milliseconds = 1 minute
     });
 
     const disposableStopLoop = vscode.commands.registerCommand('vamsi.stopLoop', function () {
@@ -118,7 +129,7 @@ export async function activate(context) {
     context.subscriptions.push(
         disposable, 
         disposableDays, 
-        disposableTalkingLoop, 
+        disposableHintLoop, 
         disposableStopLoop 
     );
 }
