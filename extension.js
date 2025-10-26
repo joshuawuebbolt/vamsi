@@ -11,6 +11,8 @@ import * as https from 'https';
 import * as fs from 'fs';
 import { textToSpeech } from '@elevenlabs/elevenlabs-js/api/index.js';
 
+var studentID = null;
+
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -20,15 +22,31 @@ export async function activate(context) {
     console.log('Congratulations, your extension "vamsi" is now active!');
 
     // Hello World command 
-    const disposable = vscode.commands.registerCommand('vamsi.helloWorld', async () => {
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-            const w = editor.document.fileName;
-            vscode.window.showInformationMessage(w);
+    const disposable = vscode.commands.registerCommand('vamsi.register', async () => {
+        try {
+            const response = await fetch('http://localhost:3000/api/students', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                // Handle HTTP errors
+                const errorData = await response.json();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`);
+            }
+
+            const responseData = await response.json();
+            vscode.window.showInformationMessage('Registration successful!');
+            studentID = responseData.student.studentID;
+            
+        } catch (error) {
+            console.error('Error during registration:', error);
+            throw error; 
         }
     });
-
-	console.log('Vamsi was last seen on May 18, 2025.');
+    
 
 	/**
 	 * Play a sound file.
@@ -74,7 +92,6 @@ export async function activate(context) {
 		// get API key from env or secret storage, prompt if missing
 
 		let apiKey = process.env.ELEVENLABS_API_KEY;
-		vscode.window.showInformationMessage('Using Eleven Labs API key: ' + `${apiKey}`);
 		if (!apiKey) {
 			const input = await vscode.window.showInputBox({
 				prompt: 'Enter your Eleven Labs API key',
@@ -179,7 +196,7 @@ export async function activate(context) {
 
         // Clear history for the new session
         hintHistory = [];
-        vscode.window.showInformationMessage('Vamsi Hint Loop: Started. Giving hints every 60 seconds.');
+        vscode.window.showInformationMessage('Vamsi will now give hints every 60 seconds.');
 
         // Set the interval to 60 seconds (60000 ms)
         hintInterval = setInterval(async () => {
@@ -227,17 +244,42 @@ export async function activate(context) {
 					console.log(response.text);
 					const responseJSON = JSON.parse(response.text);
                     const hintText = responseJSON.hint;
-					console.log(hintText)
-                    vscode.window.showInformationMessage(`Vamsi Hint: ${hintText}`);
-							try {
-								const savedPath = await synthesizeTextToMp3(hintText);
-								let sound = savedPath.split('\\').pop();
-								await playSound(context, sound);
-								vscode.window.showInformationMessage(`Audio file ${sound} synthesized speech saved to ${savedPath}`);
-							} catch (err) {
-								vscode.window.showErrorMessage(`Eleven Labs synthesis failed: ${err.message}`);
-							}
+                    const issueText = responseJSON.issues;
+					if (hintText == "FINISHED") {
+                        vscode.window.showInformationMessage(`Great job solving the problem. Vamsi is proud of you!`);
+                        await vscode.commands.executeCommand('vamsi.stopLoop'); return;
+                    }
+                    try {
+                        const savedPath = await synthesizeTextToMp3(hintText);
+                        let sound = savedPath.split('\\').pop();
+                        await playSound(context, sound);
+                        // vscode.window.showInformationMessage(`Audio file ${sound} synthesized speech saved to ${savedPath}`);
+                    } catch (err) {
+                        vscode.window.showErrorMessage(`Eleven Labs synthesis failed: ${err.message}`);
+                    }
                     hintHistory.push(hintText); // Add to history to avoid repeats
+
+                    // Update the database on the issues
+                    try {
+                        const response = await fetch(`http://localhost:3000/api/students/${studentID}/issues`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ issues: issueText })
+                        });
+
+                        if (!response.ok) {
+                            // Handle HTTP errors
+                            const errorData = await response.json();
+                            throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`);
+                        }
+                    
+                } catch (error) {
+                    console.error('Error during registration:', error);
+                    throw error; 
+                }
+
                 }
             } catch (err) {
                 const message = err instanceof Error ? err.message : String(err);
@@ -247,14 +289,15 @@ export async function activate(context) {
         }, 15000); // 60,000 milliseconds = 1 minute
     });
 
+    
     const disposableStopLoop = vscode.commands.registerCommand('vamsi.stopLoop', function () {
         if (hintInterval) {
             clearInterval(hintInterval);
             hintInterval = null;
             hintHistory = []; // Clear the history
-            vscode.window.showInformationMessage('Vamsi Hint Loop: Stopped.');
+            vscode.window.showInformationMessage('Vamsi will stop giving hints.');
         } else {
-            vscode.window.showInformationMessage('Vamsi Hint Loop: Not currently running.');
+            vscode.window.showInformationMessage('Vamsi was not giving hints before.');
         }
     });
 
