@@ -9,6 +9,7 @@ let hintHistory = [];
 import * as soundPlay from 'sound-play';
 import * as https from 'https';
 import * as fs from 'fs';
+import { textToSpeech } from '@elevenlabs/elevenlabs-js/api/index.js';
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -34,12 +35,28 @@ export async function activate(context) {
 	 * @param {vscode.ExtensionContext} context - The extension context.
 	 * @param {string} fileName - The name of the sound file to play.
 	 */
-	function playSound(context, fileName) {
+	async function playSound(context, fileName) {
 		// helper to play a bundled media file
 		const audioUri = vscode.Uri.joinPath(context.extensionUri, 'media', fileName);
-		return soundPlay.play(audioUri.fsPath).catch((err) => {
+		const fsPath = audioUri.fsPath;
+
+		// sound-play may be imported as a namespace, default, or the module itself; find the play function robustly
+		const playFn =
+			(soundPlay && typeof soundPlay.play === 'function') ? soundPlay.play :
+			(typeof soundPlay === 'function') ? soundPlay :
+			(soundPlay && soundPlay.default && typeof soundPlay.default.play === 'function') ? soundPlay.default.play :
+			null;
+
+		if (!playFn) {
+			vscode.window.showErrorMessage('Failed to play sound: play function not found on sound-play module.');
+			return;
+		}
+
+		try {
+			await playFn(fsPath);
+		} catch (err) {
 			vscode.window.showErrorMessage(`Failed to play sound: ${err.message}`);
-		});
+		}
 	}
 
 	/**
@@ -57,7 +74,7 @@ export async function activate(context) {
 		// get API key from env or secret storage, prompt if missing
 
 		let apiKey = process.env.ELEVENLABS_API_KEY;
-		vscode.window.showInformationMessage('Using Eleven Labs API key: ' + (apiKey ? 'found' : 'not found'));
+		vscode.window.showInformationMessage('Using Eleven Labs API key: ' + `${apiKey}`);
 		if (!apiKey) {
 			const input = await vscode.window.showInputBox({
 				prompt: 'Enter your Eleven Labs API key',
@@ -136,8 +153,9 @@ export async function activate(context) {
 
 		try {
 			const savedPath = await synthesizeTextToMp3(text);
-			await playSound(context, savedPath.split('/').pop());
-			vscode.window.showInformationMessage(`Synthesized speech saved to ${savedPath}`);
+			let sound = savedPath.split('\\').pop();
+			await playSound(context, sound);
+			vscode.window.showInformationMessage(`Audio file ${sound} synthesized speech saved to ${savedPath}`);
 		} catch (err) {
 			vscode.window.showErrorMessage(`Eleven Labs synthesis failed: ${err.message}`);
 		}
@@ -223,6 +241,14 @@ export async function activate(context) {
                     const hintText = response.text.trim();
 					console.log(hintText)
                     vscode.window.showInformationMessage(`Vamsi Hint: ${hintText}`);
+							try {
+								const savedPath = await synthesizeTextToMp3(hintText);
+								let sound = savedPath.split('\\').pop();
+								await playSound(context, sound);
+								vscode.window.showInformationMessage(`Audio file ${sound} synthesized speech saved to ${savedPath}`);
+							} catch (err) {
+								vscode.window.showErrorMessage(`Eleven Labs synthesis failed: ${err.message}`);
+							}
                     hintHistory.push(hintText); // Add to history to avoid repeats
                 }
             } catch (err) {
@@ -230,7 +256,7 @@ export async function activate(context) {
                 console.error(`Vamsi Hint Loop Error: ${message}`);
             }
 
-        }, 5000); // 60,000 milliseconds = 1 minute
+        }, 15000); // 60,000 milliseconds = 1 minute
     });
 
     const disposableStopLoop = vscode.commands.registerCommand('vamsi.stopLoop', function () {
