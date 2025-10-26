@@ -22,5 +22,4 @@ export async function PUT(request) {
     console.error('PUT /students error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ student }, { status: 200 });
 }

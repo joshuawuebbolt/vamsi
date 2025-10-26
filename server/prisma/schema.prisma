@@ -23,6 +23,7 @@ model Problem {
   problemID                Int                      @id @default(autoincrement())
   instructions             String
   createTime               DateTime                 @default(now())
+  summary                  String                   @default("")
 
   ProblemRecords           ProblemRecord[]
 }
@@ -32,6 +33,7 @@ model ProblemRecord {
   studentID                Int
   problemID                Int
   finished                 Boolean                  @default(false)
+  issues                   Json                     @default("[]")
 
   student                  Student                  @relation(fields: [studentID], references: [studentID])
   problem                  Problem                  @relation(fields: [problemID], references: [problemID])

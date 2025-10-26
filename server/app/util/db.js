@@ -21,19 +21,35 @@ class PrismaService {
     async createProblemRecord({ studentID, problemID }) {
     const problemRecord = await prisma.problemRecord.create({
         data: {
-            studentID: studentID,
-            problemID: problemID
+            studentID: parseInt(studentID),
+            problemID: parseInt(problemID)
         }
     });
     return problemRecord;
     }
 
-    async updateProblemRecordStatus(problemRecordID, completed) {
-    const problemRecord = await prisma.problemrecord.update({
-        where: { problemRecordID: problemRecordID },
-        data: { completed: completed }
+    async updateProblemRecordStatus(problemRecordID, finished) {
+    const problemRecord = await prisma.problemRecord.update({
+        where: { problemRecordID: parseInt(problemRecordID) },
+        data: { finished: finished }
     });
     return problemRecord;
+    }
+
+    async updateProblemRecordIssues(problemRecordID, issues) {
+    const problemRecord = await prisma.problemRecord.update({
+        where: { problemRecordID: parseInt(problemRecordID) },
+        data: { issues: issues }
+    });
+    return problemRecord;
+    }
+
+    async updateProblemSummary(problemID, summary) {
+    const problem = await prisma.problem.update({
+        where: { problemID: parseInt(problemID) },
+        data: { summary: summary }
+    });
+    return problem;
     }
 }
 
