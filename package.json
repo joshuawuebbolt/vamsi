@@ -15,8 +15,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "vamsi.daysSince",
-        "title": "Days Since"
+        "command": "vamsi.register",
+        "title": "Register as a Student"
       },
       {
         "command": "vamsi.stopLoop",
