@@ -247,7 +247,27 @@ export async function activate(context) {
                     const issueText = responseJSON.issues;
 					if (hintText == "FINISHED") {
                         vscode.window.showInformationMessage(`Great job solving the problem. Vamsi is proud of you!`);
-                        await vscode.commands.executeCommand('vamsi.stopLoop'); return;
+                        await vscode.commands.executeCommand('vamsi.stopLoop'); 
+                        try {
+                            const response = await fetch(`http://localhost:3000/api/students/${studentID}/finished`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ issues: issueText })
+                            });
+
+                            if (!response.ok) {
+                                // Handle HTTP errors
+                                const errorData = await response.json();
+                                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`);
+                            }
+                        
+                    } catch (error) {
+                        console.error('Error during registration:', error);
+                        throw error; 
+                }
+                        return;
                     }
                     try {
                         const savedPath = await synthesizeTextToMp3(hintText);
@@ -262,7 +282,7 @@ export async function activate(context) {
                     // Update the database on the issues
                     try {
                         const response = await fetch(`http://localhost:3000/api/students/${studentID}/issues`, {
-                            method: 'POST',
+                            method: 'PATCH',
                             headers: {
                                 'Content-Type': 'application/json',
                             },

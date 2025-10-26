@@ -1,5 +1,11 @@
 import { PrismaClient } from "@prisma/client"
+import { GoogleGenAI } from "@google/genai";
+import dotenv from 'dotenv';
+
 const prisma = new PrismaClient()
+const [{ journal_mode }] = await prisma.$queryRawUnsafe(
+  `PRAGMA journal_mode = WAL;`
+)
 
 class PrismaService {
     constructor() {}
@@ -137,16 +143,66 @@ class PrismaService {
     }
 
     async getSummary() {
-        // get current problem ID
-        const problemID = await this.findCurrentProblemID();
-        
-        // find all records with this problem ID
-        const problems = await prisma.problemRecord.findMany({
-            where: { problemID: parseInt(problemID) }
-        });
-        const problemIssues = problems.flatMap(record => record.issues);
-        return problem;
-    }
-}
+  // 1) Get current problem ID
+  const problemID = await this.findCurrentProblemID();
+
+  // 2) Fetch problem records
+  const problems = await prisma.problemRecord.findMany({
+    where: { problemID: Number(problemID) },
+  });
+
+  // 3) Keep input as LIST OF LISTS (one inner array per student)
+  const problemIssues = problems.map((r) =>
+    Array.isArray(r.issues) ? r.issues : [r.issues]
+  );
+
+  // 4) Build prompt (stringify to preserve nested structure)
+  const prompt = `You are given data as a **list of lists of strings**.
+Each inner list contains the issues reported by a single student.
+
+**Task**
+
+* Normalize semantically similar issues into one canonical problem (e.g., “can’t login”, “unable to sign in” → “Cannot log in”).
+* Count frequency **by students** (a student contributes at most 1 count to a problem, even if they mention it multiple times).
+* Rank problems by number of affected students.
+* Select problems that meet either threshold:
+  * Appears in **≥ 5%** of students, **or**
+  * Appears in **≥ 3** students,
+    whichever is larger.
+* If fewer than 5 problems meet thresholds, return the **top 5** by frequency anyway (or all if fewer than 5 exist).
+* Limit to **max 10** problems.
+* Use short, canonical phrasing (question-style not required; e.g., “Reset password instructions unclear”).
+* **Do not** include counts, percentages, or any extra text.
+
+**Output format (critical)**
+* Output **exactly one string** A summary consisting solely of the top 3 most common problem statements,
+start with "Students are confused about these topics: "
+* **No quotes, no code fences, no labels, no JSON, no markdown**
+* Example of correct format:
+"Cannot log in; Reset password instructions unclear; Error submitting assignment"
+
+**Input**
+
+---
+${JSON.stringify(problemIssues)}
+---
+
+**Return only the string per the format above.**`;
+
+  // 5) Create the client.
+  // Uses GEMINI_API_KEY from env by default. You can also pass { apiKey: process.env.GEMINI_API_KEY }.
+  const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
+
+  // 6) Generate
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt,
+  });
+
+  // In @google/genai, text is available as a property/getter.
+  const text = (response.text ?? "").trim();
+
+  return text;
+}}
 
 export const prismaService = new PrismaService();
