@@ -36,21 +36,36 @@ export default function Home() {
 
             <script
               dangerouslySetInnerHTML={{
-              __html: `
-              (function(){
-                const btn = document.getElementById('next-btn');
-                const out = document.getElementById('next-count');
-                if (!btn || !out) return;
-                let count = parseInt(localStorage.getItem('next_count') || '0', 10) || 0;
-                out.textContent = 'Question ' + String(count);
-                btn.addEventListener('click', function () {
-                count += 1;
-                localStorage.setItem('next_count', String(count));
-                out.textContent = 'Question ' + String(count);
-                });
-              })();
-              `,
+                __html: `
+                (function(){
+                  const btn = document.getElementById('next-btn');
+                  const out = document.getElementById('next-count');
+                  if (!btn || !out) return;
+
+                  let count = parseInt(localStorage.getItem('next_count') || '0', 10) || 0;
+                  out.textContent = 'Question ' + String(count);
+
+                  btn.addEventListener('click', async function () {
+                    count += 1;
+                    localStorage.setItem('next_count', String(count));
+                    out.textContent = 'Question ' + String(count);
+
+                    try {
+                      await fetch('http://localhost:3000/api/currentProblem', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ problemID: count }),
+                        // Helps the request complete if the page navigates after click
+                        keepalive: true
+                      });
+                    } catch (err) {
+                      console.error('Failed to send currentProblem request:', err);
+                    }
+                  });
+                })();
+                `,
               }}
+
             />
             </div>
 
@@ -86,7 +101,7 @@ export default function Home() {
             out.textContent = '';
 
             try {
-          const res = await fetch('/api/summarize');
+          const res = await fetch('/api/problems/summary');
           if (!res.ok) throw new Error('Request failed with status ' + res.status);
           const data = await res.json();
           const summary = data?.summary ?? (typeof data === 'string' ? data : JSON.stringify(data, null, 2));
