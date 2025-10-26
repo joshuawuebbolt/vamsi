@@ -1,5 +1,8 @@
 import { PrismaClient } from "@prisma/client"
 const prisma = new PrismaClient()
+const [{ journal_mode }] = await prisma.$queryRawUnsafe(
+  `PRAGMA journal_mode = WAL;`
+)
 
 class PrismaService {
     constructor() {}
