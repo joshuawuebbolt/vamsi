@@ -8,6 +8,8 @@ Vamsi bridges this gap.
 Vamsi is an AI-powered teaching assistant that integrates directly into VS Code as an extension. It provides personalized coding guidance to each student while helping professors monitor real-time class progress.
 Learning is made interactive, responsive, and personalized, while happening all within the environment where students already code.
 
+[**Watch our demo here!**](https://youtu.be/PGdaaDCRlLw)
+
 ## How It Works
 ### For Students
 
